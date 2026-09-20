@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.xtrimsystems.fillet",
+  "name": "Fillet",
+  "version": "0.1.0",
+  "author": "Victor Sanchez",
+  "description": "Attaches every bar popup flush to the bar with fillet curves into it, so bar and popups read as one surface.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Fillet.qml"
+  },
+  "barWidget": {
+    "displayName": "Fillet",
+    "description": "Invisible widget; restyles all bar popups to attach to the bar.",
+    "category": "Appearance",
+    "allowMultiple": false,
+    "defaultSection": "left",
+    "defaults": {
+      "seamRadius": 12,
+      "outline": true,
+      "barEdge": true
+    },
+    "schema": [
+      {
+        "key": "seamRadius",
+        "type": "integer",
+        "label": "Fillet radius (px)",
+        "description": "Radius of the curves into the bar and of the exposed popup corners.",
+        "min": 4,
+        "max": 32,
+        "step": 1,
+        "defaultValue": 12
+      },
+      {
+        "key": "outline",
+        "type": "boolean",
+        "label": "Outline",
+        "description": "Stroke the exposed popup edges in the popup border color. Off gives a fill-only surface.",
+        "defaultValue": true
+      },
+      {
+        "key": "barEdge",
+        "type": "boolean",
+        "label": "Bar edge line",
+        "description": "Draw the same outline along the bar's inner edge so bar and popups share one frame.",
+        "defaultValue": true
+      }
+    ]
+  }
+}
