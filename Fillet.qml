@@ -192,8 +192,6 @@ Item {
     property var menuButton: null
     property var menuRoot: null
     property var menuShell: null
-    property bool menuPatched: false
-    property bool menuHoverHooked: false
 
     function menuOpen() {
         return !!menuRoot && menuRoot.opened === true
@@ -282,51 +280,104 @@ Item {
         return b.mapToItem(null, 0, 0).x + b.width / 2
     }
 
+    function menuSilhouetteOf(card) {
+        for (var i = 0; i < card.children.length; i++) if ("seamRadius" in card.children[i]) return card.children[i]
+        return null
+    }
+
+    // Styling happens once and is shared by every bar instance; placement and
+    // hover are re-hooked by whichever instance is alive, because bars (and
+    // their Fillet instances) come and go with monitors while the menu window
+    // stays.
     function patchMenu(menu) {
-        if (menuPatched || !menu || !root.horizontalBar) return
+        if (!menu || !root.horizontalBar) return
         var win = menuWindowOf(menu)
         if (!win) return
         var parts = menuParts(win)
         if (!parts.card) return
         var card = parts.card
 
-        // One hover area per bar instance: each answers only for its own screen.
-        if (parts.dismiss && !menuHoverHooked) {
-            menuHoverArea.createObject(parts.dismiss, { win: win })
-            menuHoverHooked = true
+        if (menuWin !== win) {
+            unhookMenu()
+            menuWin = win
+            menuCard = card
+            menuPlace = function() {
+                if (!win.visible) return
+                root.styleMenu(card, parts.scrim)
+                if (root.barPos === "top" && win.cardTop < 0) win.cardTop = root.bar ? root.bar.barSize : 0
+            }
+            win.visibleChanged.connect(menuPlace)
+            if (parts.dismiss) menuHover = menuHoverArea.createObject(parts.dismiss, { win: win })
         }
-
-        for (var i = 0; i < card.children.length; i++) if ("seamRadius" in card.children[i]) { menuPatched = true; return }
-
-        var strokeWidth = Math.max(1, Border.top(card.borderSpec))
-        var barSize = root.bar ? root.bar.barSize : 0
-        if (parts.scrim) parts.scrim.visible = false
-        card.color = "transparent"
-        card.borderSpec = Border.none()
-        card.padding = card.padding + strokeWidth
-
-        var placeTop = function() {
-            if (root.barPos === "top" && win.visible && win.cardTop < 0) win.cardTop = barSize
-        }
-        placeTop()
-        win.visibleChanged.connect(placeTop)
-        if (root.barPos === "bottom") card.y = Qt.binding(function() { return win.height - barSize - card.height })
-
-        card.anchors.horizontalCenter = undefined
+        styleMenu(card, parts.scrim)
+        menuPlace()
+        if (root.barPos === "bottom") card.y = Qt.binding(function() { return win.height - (root.bar ? root.bar.barSize : 0) - card.height })
         card.x = Qt.binding(function() {
             var cx = root.menuIconCenterX()
             var x = cx >= 0 ? cx - card.width / 2 : (win.width - card.width) / 2
             var edge = Style.gapsOut + root.seamRadius
             return Math.round(Math.max(edge, Math.min(x, win.width - card.width - edge)))
         })
+    }
 
+    property var menuWin: null
+    property var menuCard: null
+    property var menuPlace: null
+    property var menuHover: null
+    property var menuStock: null
+    property bool menuStyled: false
+
+    function styleMenu(card, scrim) {
+        if (menuSilhouetteOf(card)) return
+        var strokeWidth = Math.max(1, Border.top(card.borderSpec))
+        menuStock = { scrim: scrim, color: card.color, borderSpec: card.borderSpec, padding: card.padding }
+        if (scrim) scrim.visible = false
+        card.color = "transparent"
+        card.borderSpec = Border.none()
+        card.padding = card.padding + strokeWidth
+        card.anchors.horizontalCenter = undefined
         silhouette.createObject(card, {
             panel: { barPos: root.barPos },
             card: card,
             seamRadius: root.seamRadius,
             strokeWidth: root.outline ? strokeWidth : 0
         })
-        menuPatched = true
+        menuStyled = true
+    }
+
+    // Leave nothing behind that references this instance. If this instance
+    // styled the menu, put the stock look back; a surviving instance restores
+    // the fillet on its next sweep.
+    function unhookMenu() {
+        if (menuWin && menuPlace) menuWin.visibleChanged.disconnect(menuPlace)
+        if (menuHover) menuHover.destroy()
+        if (menuCard && menuWin) {
+            var win = menuWin, card = menuCard
+            card.x = Qt.binding(function() { return Math.round((win.width - card.width) / 2) })
+            card.y = Qt.binding(function() { return win.effectiveCardTop })
+        }
+        if (menuStyled && menuCard && menuStock) {
+            var s = menuSilhouetteOf(menuCard)
+            if (s) s.destroy()
+            menuCard.color = menuStock.color
+            menuCard.borderSpec = menuStock.borderSpec
+            menuCard.padding = menuStock.padding
+            if (menuStock.scrim) menuStock.scrim.visible = true
+            if (menuWin) menuWin.cardTop = -1
+        }
+        menuWin = null
+        menuCard = null
+        menuPlace = null
+        menuHover = null
+        menuStock = null
+        menuStyled = false
+    }
+
+    Component.onDestruction: unhookMenu()
+
+    Connections {
+        target: Quickshell
+        function onScreensChanged() { sweep.pass = 0; sweep.running = true }
     }
 
     Component {
