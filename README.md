@@ -25,8 +25,20 @@ base):
 Optionally, a line in the same colour runs along the bar's inner edge, so the
 bar and its popups share one continuous frame.
 
-Nothing is written to your configuration. The plugin restyles popups in memory
-while the shell runs; disable or remove it and the stock look is back.
+Opt-in extras, all off by default:
+
+- **Hover switches popups** — while a popup is open, moving the pointer over
+  another widget that has a popup switches to it, menu-bar style. Widgets
+  without a popup are ignored.
+- **Attach the Omarchy menu** — the Omarchy menu (Super+Space or its bar
+  button) opens hanging from the bar under its button, styled like the
+  popups, without the screen-dimming overlay.
+- **Menu icon** — replace the Omarchy logo on the menu button with any text or
+  glyph, e.g. Tux from Nerd Fonts (`U+F31A`).
+
+Nothing is written to your configuration. The plugin restyles popups and the
+menu in memory while the shell runs; disable or remove it and the stock look
+is back.
 
 ## Install
 
@@ -46,6 +58,10 @@ Omarchy Settings → Plugins → Fillet:
 | Fillet radius | 12 px | Radius of the curves into the bar and of the exposed popup corners |
 | Outline | on | Stroke the exposed popup edges in the theme's popup border colour |
 | Bar edge line | on | Draw the same line along the bar's inner edge |
+| Hover switches popups | off | Hovering another popup widget while one is open switches to it |
+| Attach the Omarchy menu | off | Open the Omarchy menu hanging from the bar, without the overlay |
+| Menu icon | empty | Text or glyph replacing the Omarchy logo on the menu button |
+| Menu icon font | empty | Font family for that glyph; empty uses the bar font |
 
 Or from a terminal:
 
@@ -53,6 +69,9 @@ Or from a terminal:
 omarchy bar set io.github.xtrimsystems.fillet seamRadius 16
 omarchy bar set io.github.xtrimsystems.fillet outline false
 omarchy bar set io.github.xtrimsystems.fillet barEdge false
+omarchy bar set io.github.xtrimsystems.fillet hoverSwitch true
+omarchy bar set io.github.xtrimsystems.fillet attachMenu true
+omarchy bar set io.github.xtrimsystems.fillet menuIcon "$(printf '\xef\x8c\x9a')"   # Tux
 ```
 
 ## Remove
@@ -66,7 +85,7 @@ omarchy plugin remove io.github.xtrimsystems.fillet
 - Popups built on `PopupCard` rather than `KeyboardPanel` (the system tray,
   the media player) keep the stock look.
 - On left/right bars popups attach flush with a square edge, but without the
-  fillet curves or the bar edge line.
+  fillet curves or the bar edge line; the Omarchy menu is left as is.
 - The plugin reaches into the shell's popup internals at runtime. It matches
   them by shape rather than by name, but an Omarchy update that restructures
   popups can stop it applying. When that happens popups simply fall back to

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.xtrimsystems.fillet",
   "name": "Fillet",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Victor Sanchez",
   "description": "Attaches every bar popup flush to the bar with fillet curves into it, so bar and popups read as one surface.",
   "kinds": [
@@ -20,7 +20,11 @@
     "defaults": {
       "seamRadius": 12,
       "outline": true,
-      "barEdge": true
+      "barEdge": true,
+      "hoverSwitch": false,
+      "attachMenu": false,
+      "menuIcon": "",
+      "menuIconFont": ""
     },
     "schema": [
       {
@@ -46,6 +50,34 @@
         "label": "Bar edge line",
         "description": "Draw the same outline along the bar's inner edge so bar and popups share one frame.",
         "defaultValue": true
+      },
+      {
+        "key": "hoverSwitch",
+        "type": "boolean",
+        "label": "Hover switches popups",
+        "description": "While a popup is open, hovering another widget that has a popup switches to it.",
+        "defaultValue": false
+      },
+      {
+        "key": "attachMenu",
+        "type": "boolean",
+        "label": "Attach the Omarchy menu",
+        "description": "Open the Omarchy menu hanging from the bar under its icon, styled like the popups and without the screen overlay.",
+        "defaultValue": false
+      },
+      {
+        "key": "menuIcon",
+        "type": "string",
+        "label": "Menu icon",
+        "description": "Replace the Omarchy logo on the menu button with this text or glyph. Empty keeps the logo.",
+        "defaultValue": ""
+      },
+      {
+        "key": "menuIconFont",
+        "type": "string",
+        "label": "Menu icon font",
+        "description": "Font family for the replacement icon. Empty uses the bar font.",
+        "defaultValue": ""
       }
     ]
   }
