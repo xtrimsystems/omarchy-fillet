@@ -98,14 +98,37 @@ Item {
         return null
     }
 
+    function openPopup(popup) {
+        if (popup.owner && typeof popup.owner.open === "function") popup.owner.open()
+        else popup.open = true
+    }
+
     function hoverSwitchAt(popup, dismissArea, px, py) {
         if (!root.hoverSwitch || !popup.open) return
         if (!dismissArea.inBarRegion(px, py)) return
         var p = dismissArea.barPoint(px, py)
         var hit = popupAt(p.x, p.y)
-        if (!hit || hit === popup || hit.open) return
-        if (hit.owner && typeof hit.owner.open === "function") hit.owner.open()
-        else hit.open = true
+        if (hit) {
+            if (hit !== popup && !hit.open) openPopup(hit)
+            return
+        }
+        if (root.attachMenu && menuShell && !menuOpen() && menuButtonAt(p.x, p.y)) {
+            popup.close()
+            menuShell.summon("omarchy.menu", "{\"menu\":\"root\"}")
+        }
+    }
+
+    function menuHoverAt(win, x, y) {
+        if (!root.hoverSwitch || !root.attachMenu || !menuOpen()) return
+        if (!root.barWindow || !win.screen || !root.barWindow.screen || win.screen.name !== root.barWindow.screen.name) return
+        var barSize = root.bar ? root.bar.barSize : 0
+        var by = root.barPos === "bottom" ? y - (win.height - barSize) : y
+        if (by < 0 || by >= barSize) return
+        var hit = popupAt(x, by)
+        if (!hit || hit.open) return
+        if (typeof menuRoot.cancel === "function") menuRoot.cancel()
+        else menuShell.hide("omarchy.menu")
+        openPopup(hit)
     }
 
     // A window that has never been mapped has no contentItem yet; its declared
@@ -167,7 +190,32 @@ Item {
     // --- Omarchy menu ---------------------------------------------------------
 
     property var menuButton: null
+    property var menuRoot: null
+    property var menuShell: null
     property bool menuPatched: false
+    property bool menuHoverHooked: false
+
+    function menuOpen() {
+        return !!menuRoot && menuRoot.opened === true
+    }
+
+    function menuButtonAt(x, y) {
+        var b = menuButton
+        if (!b || !b.visible || b.width <= 0) return false
+        var pos = b.mapToItem(null, 0, 0)
+        return x >= pos.x && x < pos.x + b.width && y >= pos.y && y < pos.y + b.height
+    }
+
+    Component {
+        id: menuHoverArea
+        MouseArea {
+            property var win: null
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.NoButton
+            onPositionChanged: function(mouse) { root.menuHoverAt(win, mouse.x, mouse.y) }
+        }
+    }
 
     function isMenuButton(o) {
         return o && ("moduleName" in o) && String(o.moduleName) === "omarchy.menu" && ("bar" in o)
@@ -197,7 +245,12 @@ Item {
             if (!realBar || !realBar.shell) continue
             var loaders = realBar.shell.panelLoaders
             var loader = loaders ? loaders["omarchy.menu"] : null
-            return loader ? loader.item : null
+            var menu = loader ? loader.item : null
+            if (menu) {
+                menuRoot = menu
+                menuShell = realBar.shell
+            }
+            return menu
         }
         return null
     }
@@ -210,13 +263,14 @@ Item {
     }
 
     function menuParts(win) {
-        var parts = { scrim: null, card: null }
+        var parts = { scrim: null, card: null, dismiss: null }
         var list = win.data
         if (!list) return parts
         for (var i = 0; i < list.length; i++) {
             var k = list[i]
             if (!k) continue
             if (("borderSpec" in k) && ("contentTopInset" in k)) parts.card = k
+            else if (("pressed" in k) && ("hoverEnabled" in k)) parts.dismiss = k
             else if (("color" in k) && !("borderSpec" in k) && !parts.scrim) parts.scrim = k
         }
         return parts
@@ -235,6 +289,13 @@ Item {
         var parts = menuParts(win)
         if (!parts.card) return
         var card = parts.card
+
+        // One hover area per bar instance: each answers only for its own screen.
+        if (parts.dismiss && !menuHoverHooked) {
+            menuHoverArea.createObject(parts.dismiss, { win: win })
+            menuHoverHooked = true
+        }
+
         for (var i = 0; i < card.children.length; i++) if ("seamRadius" in card.children[i]) { menuPatched = true; return }
 
         var strokeWidth = Math.max(1, Border.top(card.borderSpec))
