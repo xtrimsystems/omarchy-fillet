@@ -36,6 +36,8 @@ Opt-in extras, all off by default:
 - **Menu icon** — replace the Omarchy logo on the menu button with any text or
   glyph, e.g. Tux from Nerd Fonts (`U+F31A`).
 
+![The Omarchy menu attached to the bar under a Tux icon](preview-menu.png)
+
 Nothing is written to your configuration. The plugin restyles popups and the
 menu in memory while the shell runs; disable or remove it and the stock look
 is back.
