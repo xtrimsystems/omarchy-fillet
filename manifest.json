@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.xtrimsystems.fillet",
   "name": "Fillet",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "author": "Victor Sanchez",
   "description": "Attaches every bar popup flush to the bar with fillet curves into it, so bar and popups read as one surface.",
   "kinds": [
@@ -24,7 +24,8 @@
       "hoverSwitch": false,
       "attachMenu": false,
       "menuIcon": "",
-      "menuIconFont": ""
+      "menuIconFont": "",
+      "menuAnchors": ""
     },
     "schema": [
       {
@@ -77,6 +78,13 @@
         "type": "string",
         "label": "Menu icon font",
         "description": "Font family for the replacement icon. Empty uses the bar font.",
+        "defaultValue": ""
+      },
+      {
+        "key": "menuAnchors",
+        "type": "string",
+        "label": "Menu anchors",
+        "description": "Hang specific menus from another bar widget: comma-separated route=widget pairs, e.g. claude=omarchy.agents. Empty hangs every menu from the menu button.",
         "defaultValue": ""
       }
     ]
