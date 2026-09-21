@@ -32,7 +32,9 @@ Opt-in extras, all off by default:
   without a popup are ignored.
 - **Attach the Omarchy menu** — the Omarchy menu (Super+Space or its bar
   button) opens hanging from the bar under its button, styled like the
-  popups, without the screen-dimming overlay.
+  popups, without the screen-dimming overlay. With **menu anchors**, a
+  menu summoned at a given route hangs from another bar widget instead —
+  say, a launcher submenu under the widget whose right-click opens it.
 - **Menu icon** — replace the Omarchy logo on the menu button with any text or
   glyph, e.g. Tux from Nerd Fonts (`U+F31A`).
 
@@ -64,6 +66,7 @@ Omarchy Settings → Plugins → Fillet:
 | Attach the Omarchy menu | off | Open the Omarchy menu hanging from the bar, without the overlay |
 | Menu icon | empty | Text or glyph replacing the Omarchy logo on the menu button |
 | Menu icon font | empty | Font family for that glyph; empty uses the bar font |
+| Menu anchors | empty | `route=widget` pairs, comma-separated: a menu opened at that route hangs from that bar widget instead of the menu button |
 
 Or from a terminal:
 
@@ -74,6 +77,7 @@ omarchy bar set io.github.xtrimsystems.fillet barEdge false
 omarchy bar set io.github.xtrimsystems.fillet hoverSwitch true
 omarchy bar set io.github.xtrimsystems.fillet attachMenu true
 omarchy bar set io.github.xtrimsystems.fillet menuIcon "$(printf '\xef\x8c\x9a')"   # Tux
+omarchy bar set io.github.xtrimsystems.fillet menuAnchors "claude=omarchy.agents"
 ```
 
 ## Remove

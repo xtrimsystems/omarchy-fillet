@@ -25,6 +25,7 @@ Item {
     readonly property bool attachMenu: boolSetting("attachMenu", false)
     readonly property string menuIcon: String(setting("menuIcon", "") || "")
     readonly property string menuIconFont: String(setting("menuIconFont", "") || "")
+    readonly property string menuAnchors: String(setting("menuAnchors", "") || "")
     readonly property string barPos: bar ? String(bar.position) : "top"
     readonly property bool horizontalBar: barPos === "top" || barPos === "bottom"
     readonly property var barWindow: root.QsWindow.window
@@ -125,7 +126,7 @@ Item {
         var by = root.barPos === "bottom" ? y - (win.height - barSize) : y
         if (by < 0 || by >= barSize) return
         var hit = popupAt(x, by)
-        if (!hit || hit.open) return
+        if (!hit || hit.open || hit === menuAnchorPopup()) return
         if (typeof menuRoot.cancel === "function") menuRoot.cancel()
         else menuShell.hide("omarchy.menu")
         openPopup(hit)
@@ -280,6 +281,42 @@ Item {
         return b.mapToItem(null, 0, 0).x + b.width / 2
     }
 
+    // "route=widget, route=widget": a menu opened at that route, or anywhere
+    // below it, hangs from the named bar widget instead of the menu button.
+    function menuAnchorFor(route) {
+        var pairs = root.menuAnchors.split(",")
+        for (var i = 0; i < pairs.length; i++) {
+            var pair = pairs[i].split("=")
+            if (pair.length !== 2) continue
+            var r = pair[0].trim()
+            if (r && (route === r || route.indexOf(r + ".") === 0)) return pair[1].trim()
+        }
+        return ""
+    }
+
+    function popupOf(moduleId) {
+        for (var i = 0; i < patched.length; i++) {
+            var owner = patched[i] ? patched[i].owner : null
+            if (owner && ("moduleName" in owner) && String(owner.moduleName) === moduleId) return patched[i]
+        }
+        return null
+    }
+
+    function menuAnchorPopup() {
+        var route = menuRoot ? String(menuRoot.activeMenu || "") : ""
+        var moduleId = route ? menuAnchorFor(route) : ""
+        return moduleId ? popupOf(moduleId) : null
+    }
+
+    function menuAnchorCenterX() {
+        var p = menuAnchorPopup()
+        if (p) {
+            var a = p.anchorItem && p.anchorItem.visible && p.anchorItem.width > 0 ? p.anchorItem : p.owner
+            if (a && a.visible && a.width > 0) return a.mapToItem(null, 0, 0).x + a.width / 2
+        }
+        return menuIconCenterX()
+    }
+
     function menuSilhouetteOf(card) {
         for (var i = 0; i < card.children.length; i++) if ("seamRadius" in card.children[i]) return card.children[i]
         return null
@@ -313,7 +350,7 @@ Item {
         menuPlace()
         card.anchors.horizontalCenter = undefined
         card.x = Qt.binding(function() {
-            var cx = root.menuIconCenterX()
+            var cx = root.menuAnchorCenterX()
             var x = cx >= 0 ? cx - card.width / 2 : (win.width - card.width) / 2
             var edge = Style.gapsOut + root.seamRadius
             return Math.round(Math.max(edge, Math.min(x, win.width - card.width - edge)))
