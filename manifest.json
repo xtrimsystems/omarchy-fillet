@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.xtrimsystems.fillet",
   "name": "Fillet",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "Victor Sanchez",
   "description": "Attaches every bar popup flush to the bar with fillet curves into it, so bar and popups read as one surface.",
   "kinds": [
