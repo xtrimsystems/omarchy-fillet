@@ -304,20 +304,36 @@ Item {
             menuPlace = function() {
                 if (!win.visible) return
                 root.styleMenu(card, parts.scrim)
-                if (root.barPos === "top" && win.cardTop < 0) win.cardTop = root.bar ? root.bar.barSize : 0
+                root.placeMenu(win, card)
             }
             win.visibleChanged.connect(menuPlace)
             if (parts.dismiss) menuHover = menuHoverArea.createObject(parts.dismiss, { win: win })
         }
         styleMenu(card, parts.scrim)
         menuPlace()
-        if (root.barPos === "bottom") card.y = Qt.binding(function() { return win.height - (root.bar ? root.bar.barSize : 0) - card.height })
+        card.anchors.horizontalCenter = undefined
         card.x = Qt.binding(function() {
             var cx = root.menuIconCenterX()
             var x = cx >= 0 ? cx - card.width / 2 : (win.width - card.width) / 2
             var edge = Style.gapsOut + root.seamRadius
             return Math.round(Math.max(edge, Math.min(x, win.width - card.width - edge)))
         })
+    }
+
+    // Only the card's x is bound from here, and every sweep rebinds it, so a
+    // binding left by a dead instance is always superseded and the stock
+    // anchor takes over on unhook. Its y is never bound: a top bar drives the
+    // stock binding through the window's cardTop and a bottom bar anchors the
+    // card, plain values that outlive this instance. A y binding would die
+    // with the instance that installed it, freezing the card wherever it last
+    // was, and the stock binding cannot be recreated from outside the menu.
+    function placeMenu(win, card) {
+        var barSize = root.bar ? root.bar.barSize : 0
+        if (root.barPos === "top" && win.cardTop < 0) win.cardTop = barSize
+        if (root.barPos === "bottom" && card.parent) {
+            card.anchors.bottom = card.parent.bottom
+            card.anchors.bottomMargin = barSize
+        }
     }
 
     property var menuWin: null
@@ -335,7 +351,6 @@ Item {
         card.color = "transparent"
         card.borderSpec = Border.none()
         card.padding = card.padding + strokeWidth
-        card.anchors.horizontalCenter = undefined
         silhouette.createObject(card, {
             panel: { barPos: root.barPos },
             card: card,
@@ -351,10 +366,10 @@ Item {
     function unhookMenu() {
         if (menuWin && menuPlace) menuWin.visibleChanged.disconnect(menuPlace)
         if (menuHover) menuHover.destroy()
-        if (menuCard && menuWin) {
-            var win = menuWin, card = menuCard
-            card.x = Qt.binding(function() { return Math.round((win.width - card.width) / 2) })
-            card.y = Qt.binding(function() { return win.effectiveCardTop })
+        if (menuCard) {
+            if (menuCard.parent) menuCard.anchors.horizontalCenter = menuCard.parent.horizontalCenter
+            menuCard.anchors.bottom = undefined
+            menuCard.anchors.bottomMargin = 0
         }
         if (menuStyled && menuCard && menuStock) {
             var s = menuSilhouetteOf(menuCard)
