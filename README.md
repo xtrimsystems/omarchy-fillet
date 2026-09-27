@@ -25,6 +25,16 @@ base):
 Optionally, a line in the same colour runs along the bar's inner edge, so the
 bar and its popups share one continuous frame.
 
+The curves and the exposed corners follow the theme's corner rounding, so a
+theme with square windows gets square popups.
+
+With a transparent bar there is no bar surface to join, so instead:
+
+- the bar edge line is hidden;
+- while a popup is open, the bar is tinted in the popup colour behind its
+  icons, solid above the popup and fading out along the bar;
+- the popup outline fades in from the bar down its sides.
+
 Opt-in extras, all off by default:
 
 - **Hover switches popups** — while a popup is open, moving the pointer over
@@ -59,7 +69,6 @@ Omarchy Settings → Plugins → Fillet:
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| Fillet radius | 12 px | Radius of the curves into the bar and of the exposed popup corners |
 | Outline | on | Stroke the exposed popup edges in the theme's popup border colour |
 | Bar edge line | on | Draw the same line along the bar's inner edge |
 | Hover switches popups | off | Hovering another popup widget while one is open switches to it |
@@ -71,7 +80,6 @@ Omarchy Settings → Plugins → Fillet:
 Or from a terminal:
 
 ```bash
-omarchy bar set io.github.xtrimsystems.fillet seamRadius 16
 omarchy bar set io.github.xtrimsystems.fillet outline false
 omarchy bar set io.github.xtrimsystems.fillet barEdge false
 omarchy bar set io.github.xtrimsystems.fillet hoverSwitch true

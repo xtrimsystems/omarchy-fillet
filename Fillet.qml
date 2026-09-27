@@ -18,7 +18,8 @@ Item {
     implicitWidth: 0
     implicitHeight: 0
 
-    readonly property int seamRadius: Math.max(4, Number(setting("seamRadius", 12)))
+    readonly property int seamRadius: Math.max(0, Style.cornerRadius)
+    readonly property bool barClear: bar ? bar.transparent === true : false
     readonly property bool outline: boolSetting("outline", true)
     readonly property bool barEdge: boolSetting("barEdge", true)
     readonly property bool hoverSwitch: boolSetting("hoverSwitch", false)
@@ -163,11 +164,13 @@ Item {
         var s = silhouette.createObject(card, {
             panel: popup,
             card: card,
-            seamRadius: root.seamRadius,
+            seamRadius: Qt.binding(function() { return root.seamRadius }),
+            barClear: Qt.binding(function() { return root.barClear }),
             strokeWidth: root.outline ? strokeWidth : 0
         })
         if (!s) return
         patched.push(popup)
+        popup.openChanged.connect(root.refreshOpen)
 
         // While a popup is open its dismiss surface covers the bar, so bar
         // widgets never see hover; the surface's own pointer moves are the
@@ -176,6 +179,14 @@ Item {
         if (dismissArea) dismissArea.positionChanged.connect(function(mouse) {
             root.hoverSwitchAt(popup, dismissArea, mouse.x, mouse.y)
         })
+    }
+
+    property var openPopup: null
+
+    function refreshOpen() {
+        var found = null
+        for (var i = 0; i < patched.length; i++) if (patched[i] && patched[i].open) found = patched[i]
+        openPopup = found
     }
 
     function scan() {
@@ -391,7 +402,8 @@ Item {
         silhouette.createObject(card, {
             panel: { barPos: root.barPos },
             card: card,
-            seamRadius: root.seamRadius,
+            seamRadius: Qt.binding(function() { return root.seamRadius }),
+            barClear: Qt.binding(function() { return root.barClear }),
             strokeWidth: root.outline ? strokeWidth : 0
         })
         menuStyled = true
@@ -459,6 +471,47 @@ Item {
         function onLayoutConfigChanged() { sweep.pass = 0; sweep.running = true }
     }
 
+    // On a see-through bar, tint the bar behind its widgets while a popup is
+    // open: solid above the popup, fading out along the bar.
+    readonly property int tintFalloff: 480
+    readonly property real tintScreenW: barWindow ? barWindow.width : 0
+    readonly property real popupX: openPopup && openPopup.cardOrigin ? openPopup.cardOrigin.x : 0
+    readonly property real popupW: openPopup ? openPopup.contentWidth : 0
+    // A leftover strip too narrow for the fade is filled solid instead.
+    readonly property bool tintToLeft: popupX < tintFalloff / 2
+    readonly property bool tintToRight: tintScreenW - popupX - popupW < tintFalloff / 2
+    readonly property real tintX: tintToLeft ? -tintFalloff : popupX
+    readonly property real tintW: (tintToRight ? tintScreenW + tintFalloff : popupX + popupW) - tintX
+    readonly property color tintColor: Color.popups.background
+
+    function tintAt(strength, solid) {
+        return Qt.rgba(tintColor.r, tintColor.g, tintColor.b, tintColor.a * (solid ? 1 : strength))
+    }
+
+    function tintStop(px) {
+        return tintScreenW > 0 ? Math.max(0, Math.min(1, px / tintScreenW)) : 0
+    }
+
+    Rectangle {
+        parent: root.barWindow ? root.barWindow.contentItem : null
+        visible: root.barClear && root.horizontalBar && root.openPopup !== null && root.tintScreenW > 0
+        anchors.fill: parent
+        z: -1
+        gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0; color: root.tintAt(0, root.tintToLeft) }
+            GradientStop { position: root.tintStop(root.tintX - root.tintFalloff); color: root.tintAt(0, root.tintToLeft) }
+            GradientStop { position: root.tintStop(root.tintX - root.tintFalloff * 0.5); color: root.tintAt(0.25, root.tintToLeft) }
+            GradientStop { position: root.tintStop(root.tintX - root.tintFalloff * 0.2); color: root.tintAt(0.7, root.tintToLeft) }
+            GradientStop { position: root.tintStop(root.tintX); color: root.tintColor }
+            GradientStop { position: root.tintStop(root.tintX + root.tintW); color: root.tintColor }
+            GradientStop { position: root.tintStop(root.tintX + root.tintW + root.tintFalloff * 0.2); color: root.tintAt(0.7, root.tintToRight) }
+            GradientStop { position: root.tintStop(root.tintX + root.tintW + root.tintFalloff * 0.5); color: root.tintAt(0.25, root.tintToRight) }
+            GradientStop { position: root.tintStop(root.tintX + root.tintW + root.tintFalloff); color: root.tintAt(0, root.tintToRight) }
+            GradientStop { position: 1; color: root.tintAt(0, root.tintToRight) }
+        }
+    }
+
     onMenuIconChanged: applyMenuIcon()
     onMenuIconFontChanged: applyMenuIcon()
     onAttachMenuChanged: if (attachMenu) scan()
@@ -467,7 +520,7 @@ Item {
     // popup outline, so line and fillet curves meet flush at the tips.
     PanelWindow {
         screen: root.barWindow ? root.barWindow.screen : null
-        visible: root.barEdge && root.horizontalBar && root.barWindow !== null
+        visible: root.barEdge && !root.barClear && root.horizontalBar && root.barWindow !== null
         color: Color.popups.border
         exclusionMode: ExclusionMode.Ignore
         implicitHeight: root.lineWidth
