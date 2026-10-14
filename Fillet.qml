@@ -86,13 +86,22 @@ Item {
     }
 
     // Some widgets keep their popup's owner as an invisible zero-size host
-    // beside the visible bar button, so hit-test the button the popup is
-    // anchored to rather than the owner.
+    // beside the visible bar button, so the button the popup is anchored to
+    // comes first. Others anchor to a hidden point instead (the notification
+    // center hangs from one past the screen's right edge), and there the
+    // owner is the button.
+    function buttonOf(popup) {
+        var a = popup ? popup.anchorItem : null
+        if (a && a.visible && a.width > 0) return a
+        var o = popup ? popup.owner : null
+        return o && o.visible && o.width > 0 ? o : null
+    }
+
     function popupAt(x, y) {
         for (var i = 0; i < patched.length; i++) {
             var p = patched[i]
-            var a = p ? p.anchorItem : null
-            if (!a || !a.visible || a.width <= 0) continue
+            var a = buttonOf(p)
+            if (!a) continue
             var pos = a.mapToItem(null, 0, 0)
             if (x >= pos.x && x < pos.x + a.width && y >= pos.y && y < pos.y + a.height) return p
         }
@@ -309,11 +318,8 @@ Item {
     }
 
     function menuAnchorCenterX() {
-        var p = menuAnchorPopup()
-        if (p) {
-            var a = p.anchorItem && p.anchorItem.visible && p.anchorItem.width > 0 ? p.anchorItem : p.owner
-            if (a && a.visible && a.width > 0) return a.mapToItem(null, 0, 0).x + a.width / 2
-        }
+        var a = buttonOf(menuAnchorPopup())
+        if (a) return a.mapToItem(null, 0, 0).x + a.width / 2
         return menuIconCenterX()
     }
 
