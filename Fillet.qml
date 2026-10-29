@@ -29,6 +29,7 @@ Item {
     readonly property string barPos: bar ? String(bar.position) : "top"
     readonly property bool horizontalBar: barPos === "top" || barPos === "bottom"
     readonly property var barWindow: root.QsWindow.window
+    readonly property bool barHidden: !!barWindow && !!barWindow.margins && (barWindow.margins.top < 0 || barWindow.margins.bottom < 0)
     readonly property int lineWidth: Math.max(1, Border.top(Border.surfaceSpec("popups", "border", Color.popups.border, Math.max(1, Style.space(2)))))
     property var patched: []
 
@@ -473,7 +474,7 @@ Item {
     // popup outline, so line and fillet curves meet flush at the tips.
     PanelWindow {
         screen: root.barWindow ? root.barWindow.screen : null
-        visible: root.barEdge && root.horizontalBar && root.barWindow !== null
+        visible: root.barEdge && root.horizontalBar && root.barWindow !== null && !root.barHidden
         color: Color.popups.border
         exclusionMode: ExclusionMode.Ignore
         implicitHeight: root.lineWidth
