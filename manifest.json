@@ -18,7 +18,6 @@
     "allowMultiple": false,
     "defaultSection": "left",
     "defaults": {
-      "seamRadius": 12,
       "outline": true,
       "barEdge": true,
       "hoverSwitch": false,
@@ -28,16 +27,6 @@
       "menuAnchors": ""
     },
     "schema": [
-      {
-        "key": "seamRadius",
-        "type": "integer",
-        "label": "Fillet radius (px)",
-        "description": "Radius of the curves into the bar and of the exposed popup corners.",
-        "min": 4,
-        "max": 32,
-        "step": 1,
-        "defaultValue": 12
-      },
       {
         "key": "outline",
         "type": "boolean",
